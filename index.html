@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proyecto Aplicación Vulnerable con Django</title>
+  <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafb;
+      color: #222;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+      margin-bottom: 0.5em;
+    }
+    h1 {
+      border-bottom: 3px solid #2980b9;
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
+    }
+    h2 {
+      margin-top: 2em;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 2em 0;
+    }
+    code, pre {
+      font-family: "Courier New", Courier, monospace;
+      background-color: #eaeef3;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    pre {
+      padding: 1em;
+      overflow-x: auto;
+      background-color: #f4f7fb;
+      border-left: 4px solid #2980b9;
+      margin: 1em 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+      box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+    }
+    th, td {
+      text-align: left;
+      padding: 0.75em 1em;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #2980b9;
+      color: #fff;
+    }
+    ul {
+      list-style-type: disc;
+      padding-left: 1.5em;
+    }
+    .note {
+      background: #d9edf7;
+      border-left: 5px solid #2980b9;
+      padding: 1em;
+      margin: 1em 0;
+      color: #31708f;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 2em 3em;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+    }
+    a {
+      color: #2980b9;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Proyecto Aplicación Vulnerable con Django</h1>
+
+    <h2>Firewall UFW</h2>
+    <pre><code>sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 2222/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+</code></pre>
+
+    <h2>Cambiar puerto SSH</h2>
+    <pre><code>sudo nano /etc/ssh/sshd_config  # Cambiar puerto a 2222
+sudo systemctl restart ssh
+</code></pre>
+
+    <h2>Fail2Ban</h2>
+    <pre><code>sudo apt install fail2ban
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+
+sudo fail2ban-client status sshd
+
+sudo fail2ban-client set sshd unbanip &lt;IP&gt;
+</code></pre>
+
+    <h2>Instalación Apache</h2>
+    <pre><code>sudo apt install apache2
+sudo systemctl start apache2
+sudo systemctl enable apache2
+</code></pre>
+
+    <h2>Lynis auditoría</h2>
+    <pre><code>sudo apt install lynis
+sudo lynis audit system
+</code></pre>
+
+    <hr />
+
+    <h2>¿Por qué Django es ideal para esto?</h2>
+    <ul>
+      <li>Tiene un sistema de autenticación robusto (users, sesiones, permisos, etc.).</li>
+      <li>Su ORM previene inyección SQL por defecto.</li>
+      <li>Incluye protecciones contra CSRF, XSS y clickjacking por diseño.</li>
+      <li>Muy modular y extensible, ideal para apps tipo SaaS.</li>
+      <li>Puedes organizar la seguridad desde la configuración (<code>settings.py</code>) hasta las vistas, middlewares, etc.</li>
+    </ul>
+
+    <hr />
+
+    <h2>Seguridad basada en el OWASP Top 10</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>OWASP Top 10</th>
+          <th>Cómo lo cubres en Django</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>A01 – Broken Access Control</td><td><code>@login_required</code>, permisos de grupos, <code>has_perm</code>, lógica en views.</td></tr>
+        <tr><td>A02 – Cryptographic Failures</td><td>Usa <code>pbkdf2</code> (Django por defecto), HTTPS con <code>SECURE_SSL_REDIRECT</code>.</td></tr>
+        <tr><td>A03 – Injection</td><td>El ORM de Django evita SQL injection. Usa <code>QuerySet</code> y no <code>.raw()</code>.</td></tr>
+        <tr><td>A04 – Insecure Design</td><td>Valida entradas, sanitiza archivos subidos, define lógica de negocio segura.</td></tr>
+        <tr><td>A05 – Security Misconfiguration</td><td>Configura <code>ALLOWED_HOSTS</code>, <code>SECURE_HSTS_SECONDS</code>, <code>DEBUG=False</code>, etc.</td></tr>
+        <tr><td>A06 – Vulnerable Components</td><td>Usa <code>pip-audit</code>, <code>requirements.txt</code> actualizado, virtualenvs.</td></tr>
+        <tr><td>A07 – Identification and Authentication Failures</td><td>Usa <code>User</code>, MFA opcional, <code>SESSION_COOKIE_SECURE</code>, límites de sesión.</td></tr>
+        <tr><td>A08 – Software and Data Integrity Failures</td><td>Firmado de datos con <code>django.signing</code>, verificación de integridad.</td></tr>
+        <tr><td>A09 – Security Logging and Monitoring Failures</td><td>Logs con <code>logging</code>, integración con SIEM (opcional).</td></tr>
+        <tr><td>A10 – SSRF</td><td>Bloquea IP internas, válida URLs, no permitas redirecciones sin control.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Nota:</strong> De todas las vulnerabilidades, usaremos solo:<br />
+      - El ORM de Django evita SQL injection. Usa <code>QuerySet</code> y no <code>.raw()</code>.<br />
+      - Configura <code>ALLOWED_HOSTS</code>, <code>SECURE_HSTS_SECONDS</code>, <code>DEBUG=False</code>, etc.<br />
+      - Uso de <code>path</code> y <code>reverse</code> para URLs.
+    </div>
+
+    <hr />
+
+    <h2>¿Se puede hacer vulnerable para enseñar auditoría?</h2>
+    <ul>
+      <li>Eliminar middleware de CSRF → vulnerable a CSRF.</li>
+      <li>Usar <code>eval()</code> o <code>.raw()</code> → vulnerable a ejecución de código o SQL injection.</li>
+      <li>Insertar campos ocultos mal gestionados → IDOR o acceso no autorizado.</li>
+      <li>Exponer información sensible en mensajes de error → información leakage.</li>
+      <li>No validar archivos → subida de shells, RCE.</li>
+    </ul>
+
+    <hr />
+
+    <h2>¿Qué incluiría el proyecto?</h2>
+    <ul>
+      <li>Login, logout, registro con roles (candidato/reclutador).</li>
+      <li>Carga de portfolios (imagen, texto, links).</li>
+      <li>Buscador de empleos.</li>
+      <li>Panel de control para ambos tipos de usuarios.</li>
+      <li>Protección OWASP Top 10.</li>
+      <li>Versión insegura (copiada o en rama separada) para practicar pentesting.</li>
+    </ul>
+
+    <hr />
+
+    <h2>Instalación desde 0</h2>
+
+    <h3>Crear un nuevo usuario</h3>
+    <pre><code>adduser falexis
+usermod -aG sudo falexis
+</code></pre>
+  </div>
+</body>
+</html>
