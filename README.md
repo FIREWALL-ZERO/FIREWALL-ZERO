@@ -1,8 +1,6 @@
-# FIREWALL-ZERO
+## Simulación de entorno vulnerable y fortificación básica
 Simular la preparación y despliegue inicial de un servidor expuesto a Internet en una organización real. Cada equipo será responsable de configurar, asegurar y documentar su servidor, que servirá como base para las siguientes fases del ejercicio.
 # Proyecto FIREWALL ZERO – Fase 1
-
-## Simulación de entorno vulnerable y fortificación básica
 
 ---
 
@@ -99,3 +97,77 @@ sudo systemctl enable apache2
 # Lynis auditoría
 sudo apt install lynis
 sudo lynis audit system
+
+
+# Proyecto Aplicación Vulnerable con Django
+
+## 2. Instalación de un paquete de aplicaciones vulnerables
+
+### ¿Por qué Django es ideal para esto?
+
+- Tiene un sistema de autenticación robusto (users, sesiones, permisos, etc.).
+- Su ORM previene inyección SQL por defecto.
+- Incluye protecciones contra CSRF, XSS y clickjacking por diseño.
+- Muy modular y extensible, ideal para apps tipo SaaS.
+- Puedes organizar la seguridad desde la configuración (`settings.py`) hasta las vistas, middlewares, etc.
+
+---
+
+### Seguridad basada en el OWASP Top 10
+
+| OWASP Top 10                             | Cómo lo cubres en Django                                                                                   |
+|----------------------------------------|------------------------------------------------------------------------------------------------------------|
+| A01 – Broken Access Control             | `@login_required`, permisos de grupos, `has_perm`, lógica en views.                                        |
+| A02 – Cryptographic Failures            | Usa `pbkdf2` (Django por defecto), HTTPS con `SECURE_SSL_REDIRECT`.                                        |
+| A03 – Injection                        | El ORM de Django evita SQL injection. Usa `QuerySet` y no `.raw()`.                                        |
+| A04 – Insecure Design                  | Valida entradas, sanitiza archivos subidos, define lógica de negocio segura.                               |
+| A05 – Security Misconfiguration        | Configura `ALLOWED_HOSTS`, `SECURE_HSTS_SECONDS`, `DEBUG=False`, etc.                                     |
+| A06 – Vulnerable Components             | Usa `pip-audit`, `requirements.txt` actualizado, virtualenvs.                                             |
+| A07 – Identification and Authentication Failures | Usa `User`, MFA opcional, `SESSION_COOKIE_SECURE`, límites de sesión.                                       |
+| A08 – Software and Data Integrity Failures | Firmado de datos con `django.signing`, verificación de integridad.                                         |
+| A09 – Security Logging and Monitoring Failures | Logs con `logging`, integración con SIEM (opcional).                                                       |
+| A10 – SSRF                             | Bloquea IP internas, válida URLs, no permitas redirecciones sin control.                                  |
+
+---
+
+### Nota
+
+De todas las vulnerabilidades, usaremos solo:
+
+- El ORM de Django evita SQL injection. Usa `QuerySet` y no `.raw()`.
+- Configura `ALLOWED_HOSTS`, `SECURE_HSTS_SECONDS`, `DEBUG=False`, etc.
+- Uso de `path` y `reverse` para URLs.
+
+---
+
+### ¿Se puede hacer vulnerable para enseñar auditoría?
+
+Sí. Una vez que el proyecto esté construido de forma segura, puedes:
+
+- Eliminar middleware de CSRF → vulnerable a CSRF.
+- Usar `eval()` o `.raw()` → vulnerable a ejecución de código o SQL injection.
+- Insertar campos ocultos mal gestionados → IDOR o acceso no autorizado.
+- Exponer información sensible en mensajes de error → información leakage.
+- No validar archivos → subida de shells, RCE.
+
+---
+
+### ¿Qué incluiría el proyecto?
+
+- Login, logout, registro con roles (candidato/reclutador).
+- Carga de portfolios (imagen, texto, links).
+- Buscador de empleos.
+- Panel de control para ambos tipos de usuarios.
+- Protección OWASP Top 10.
+- Versión insegura (copiada o en rama separada) para practicar pentesting.
+
+---
+
+## Instalación desde 0
+
+### Crear un nuevo usuario
+
+```bash
+adduser falexis
+usermod -aG sudo falexis
+
