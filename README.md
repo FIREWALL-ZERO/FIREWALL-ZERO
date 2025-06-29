@@ -63,7 +63,30 @@ Este proyecto consiste en la configuración inicial y fortificación básica de 
 
 ---
 
+# 🧠 PortfolioHub
+
+Aplicación web construida con Django y MySQL que incluye funcionalidades de registro, login y pruebas de vulnerabilidades como SQL Injection y Command Injection. Totalmente dockerizada para facilitar su despliegue.
+
+---
+
+## 🚀 Requisitos
+
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+---
+
+## 🛠 Instalación rápida
+
+```bash
+1) git clone https://github.com/Reoobot/portfoliohub.git
+2) cd portfoliohub
+3) docker compose up --build -d
+
+
 ## Comandos clave
+
+##
 
 ```bash
 # Firewall UFW
