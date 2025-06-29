@@ -76,7 +76,7 @@ Aplicación web construida con Django y MySQL que incluye funcionalidades de reg
 
 ---
 
-## 🛠 Instalación rápida
+## 🛠 Instalación rápida para la Web Vulnerable.
 
 ```bash
 1) git clone https://github.com/Reoobot/portfoliohub.git
