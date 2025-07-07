@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Informe Ejecutivo - Proyecto FIREWALL ZERO - Fase 3</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      line-height: 1.6;
+      color: #e0e0e0;
+      background-color: #121212;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: #00bfff;
+    }
+
+    .header,
+    .footer {
+      text-align: center;
+    }
+
+    .highlight {
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-left: 4px solid #00bfff;
+    }
+
+    pre,
+    code {
+      background-color: #1a1a1a;
+      color: #00ff99;
+      padding: 6px;
+      border-radius: 4px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .enlace a {
+      display: inline-block;
+      margin: 15px;
+      padding: 12px 24px;
+      background-color: #00bfff;
+      color: #121212;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    a:hover {
+      background-color: #0099cc;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>Informe Ejecutivo</h1>
+    <h2>Proyecto FIREWALL ZERO – Fase 3</h2>
+    <p><strong>Fecha de entrega:</strong> 07-07-2025<br />
+      <strong>Empresa:</strong> Socistar Caribe S.L.
+    </p>
+    <p><strong>Equipo Blue-Team:</strong><br />
+      FREDDY ALEXIS VEGAS GIL<br />
+      NATALIA KUCHERENKO SHEVEROVA<br />
+      CARLOS LOPEZ VILLA</p>
+  </div>
+
+  <div class="section">
+    <h2>Simulación de Ataque en Tiempo Real - Controlado</h2>
+    <p><strong>IP objetivo:</strong> 217.154.224.228</p>
+  </div>
+
+  <div class="section">
+    <h3>Paso 1: Verificación de Servicio Web</h3>
+    <p>Comando: <code>curl -I http://217.154.224.228/</code></p>
+    <div class="highlight">
+      <ul>
+        <li>Servidor Apache activo, responde con HTTP 200 OK.</li>
+        <li>Faltan cabeceras de seguridad: <em>X-Frame-Options, X-Content-Type-Options</em>.</li>
+        <li>Posible filtración de metadatos vía ETag.</li>
+        <li>Métodos HTTP permitidos: GET, POST, HEAD, OPTIONS.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Paso 2: Escaneo de Puertos y Servicios</h3>
+    <p>Comando: <code>sudo nmap -sS -sV -O -Pn -T4 217.154.224.228 -p-</code></p>
+    <p>Se detectaron servicios y versiones en múltiples puertos, incluyendo HTTP (80), SSH (22), y DNS (53).</p>
+  </div>
+
+  <div class="section">
+    <h3>Paso 3: Escaneo de Vulnerabilidades</h3>
+    <p>Comando: <code>sudo nmap --script vuln -p 21,22,80,443,139,445,3306,8443 217.154.224.228</code></p>
+    <p>Se identificaron servicios potencialmente vulnerables. Se observó que el puerto 53 (DNS) ejecuta dnsmasq 2.78.</p>
+  </div>
+
+  <div class="section">
+    <h3>Paso 4: Análisis del Sitio Web</h3>
+    <ul>
+      <li><code>nikto -h http://217.154.224.228</code></li>
+      <li><code>gobuster dir -u http://217.154.224.228/ -w /usr/share/wordlists/dirb/common.txt</code></li>
+    </ul>
+    <p>Resultado: no se detectaron rutas ocultas ni formularios dinámicos. Apache desplegado sin aplicaciones web adicionales.</p>
+  </div>
+
+  <div class="section">
+    <h3>Paso 5: Análisis del Servicio DNS</h3>
+    <p>Se realizaron pruebas simuladas de ataque de spoofing y overflow sobre dnsmasq. Los ataques no tuvieron éxito, indicando protección activa o versión parcheada.</p>
+    <p>Pruebas con <code>tcpdump</code> confirmaron que el puerto 53 UDP está abierto.</p>
+  </div>
+
+  <div class="section">
+    <h3>Paso 6: Simulación de Ataques</h3>
+    <ul>
+      <li><code>sudo hping3 -2 -p 53 -c 10 -d 120 --baseport 1050 217.154.224.228</code></li>
+      <li><code>sudo tcpdump -i any port 53</code></li>
+    </ul>
+    <p>Resultados: el servidor responde, pero no fue afectado, indicando robustez ante ataques de flood DNS básicos.</p>
+  </div>
+
+  <div class="section">
+    <h3>Conclusión</h3>
+    <p>El servidor 217.154.224.228 mostró estar correctamente configurado, con servicios actualizados y sin vectores de ataque evidentes. Las pruebas de fuerza bruta, inyecciones y overflow no tuvieron efecto. El firewall permite tráfico DNS, pero el sistema mostró defensa contra manipulación maliciosa.</p>
+  </div>
+
+  <div class="footer">
+    <p><em>Socistar Caribe S.L. - Blue-Team Project | 2025</em></p>
+  </div>
+
+  <div class="enlace">
+    <a href="https://docs.google.com/document/d/1_0N1lBmECIoB1MRHqegu7vT7s7CNq7_J8jU1F4bzrcc/edit?tab=t.0"
+      target="_blank">Informe Técnico</a>
+    <a href="https://firewall-zero.github.io/Dashboard_T-cnico_Proceso_de_selecci-n_t-cnica_Departamento_de_Ciberseguridad/"
+      target="_blank">Dashboard Técnico</a>
+  </div>
+</body>
+
+</html>

